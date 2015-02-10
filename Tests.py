@@ -1,5 +1,6 @@
 import unittest
 from CorpusParser import *
+from Tagger import *
 
 class TestWordParsing(unittest.TestCase):
     def test_parse_word(self):
@@ -27,7 +28,20 @@ class TestWordParsing(unittest.TestCase):
     def test_tag_counter(self):
         c = TagCounter()
         c.parse_file(open('test_file.POS'))
-        self.assertEqual(c.p_word('tests', 'VBZ'), 1./2)
+        self.assertEqual(c.p_word('tests', 'VBZ'), (1. + TagCounter._delta)/2)
+
+class TestTagger(unittest.TestCase):
+    def test_split_sentence(self):
+        s = ''
+        self.assertEquals([], Tagger.split_sentence(s))
+        s = 'Simple.'
+        self.assertEquals(['simple', '.'], Tagger.split_sentence(s))
+        s = 'A bit complex'
+        self.assertEquals(['a', 'bit', 'complex'], Tagger.split_sentence(s))
+        s = 'This (test) line, really is: #cool!'
+        self.assertEquals(['this', '(', 'test', ')', 'line', ',', 'really', 'is', ':', '#', 'cool', '!'], Tagger.split_sentence(s))
+        s = "quotes ``should work''"
+        self.assertEquals(['quotes', '``', 'should', 'work', "''"], Tagger.split_sentence(s))
 
 if __name__ == '__main__':
     unittest.main()
