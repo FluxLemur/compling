@@ -73,6 +73,14 @@ def parse_file(f):
                 curr_sentence = new_sentence()
     return sentences
 
+def map_files(fun, file_range):
+    for i in xrange(2, 13):
+        folder = format(i, '02')
+        for j in file_range:
+            fname = format(i*100+j, '04')
+            f = open('WSJ-2-12/'+folder+'/WSJ_'+fname+'.POS')
+            fun(f)
+            f.close()
 
 class TagCounter:
     ''' This class stores the number of relative counts for (tag, tag)
@@ -140,12 +148,9 @@ class TagCounter:
                 wtags.append(t)
         return wtags
 
-    def parse_corpus(self):
+    def parse_corpus_range(self, fold_range):
         ''' parses all corpus files to collect count data '''
-        for i in xrange(2, 13):
-            folder = format(i, '02')
-            for j in xrange(100):
-                fname = format(i*100+j, '04')
-                f = open('WSJ-2-12/'+folder+'/WSJ_'+fname+'.POS')
-                self.parse_file(f)
-                f.close()
+        map_files(self.parse_file, fold_range)
+
+    def parse_corpus(self):
+        self.parse_corpus_range(range(100))

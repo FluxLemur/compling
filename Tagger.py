@@ -5,15 +5,16 @@ from CorpusParser import TagCounter,Word,START
 class Tagger:
     ''' Tags sentences after learning from the WSJ corpus '''
 
-    def __init__(self):
-        self.tag_counter = TagCounter()
-        self.tag_counter.parse_corpus()
+    def __init__(self, c=None):
+        if c == None:
+            self.tag_counter = TagCounter()
+            self.tag_counter.parse_corpus()
+        else:
+            self.tag_counter = c
 
-    def tag_sentence(self, sentence):
+    def tag_words(self, words):
         ''' Uses the Viterbi dynamic programming algorithm to determine the most
             likely tagging for a sentence '''
-
-        words = Tagger.split_sentence(sentence)
         tags = self.tag_counter.tags()
         n = len(words)
         k = len(tags)
@@ -57,7 +58,13 @@ class Tagger:
             tagged_sentence.insert(0, Word(words[i],tags[best_i]))
             best_i = backpointer[i][best_i]
         
-        return tagged_sentence
+        return [START] + tagged_sentence
+
+    def tag_sentence(self, sentence):
+        ''' Splits and tags a sentence '''
+        words = Tagger.split_sentence(sentence)
+        return self.tag_words(words)
+
 
     @staticmethod
     def split_sentence(sentence):
