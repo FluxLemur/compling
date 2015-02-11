@@ -1,12 +1,12 @@
 import string
 
 class Word:
+    apostrophes = {}
     def __init__(self, chars, tag):
         self.chars = string.lower(chars)    # characters that make up the word
         self.tag = tag                      # POS tag for the word
-        for c in tag:
-            if c in string.lowercase:
-                raise InvalidWordFormatError(chars + tag)
+        if "'" in chars:
+            Word.apostrophes[chars] = Word.apostrophes.get(chars, 0) + 1
     def __repr__(self):
         return self.chars + '/' + self.tag
     def __str__(self):

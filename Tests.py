@@ -43,5 +43,16 @@ class TestTagger(unittest.TestCase):
         s = "quotes ``should work''"
         self.assertEquals(['quotes', '``', 'should', 'work', "''"], Tagger.split_sentence(s))
 
+        # dealing with contractions and apostrophes
+        s = "I'd, I'm" 
+        self.assertEquals(["i","'d",',',"i","'m", ], Tagger.split_sentence(s))
+        s = "``Leo's'' aren't"
+        self.assertEquals(["``","leo","'s","''","are","n't"], Tagger.split_sentence(s))
+        s = "we're we've"
+        self.assertEquals(["we","'re","we","'ve", ], Tagger.split_sentence(s))
+        
+        # inentionally unhandled
+        s = "The '70s were rock'n"
+
 if __name__ == '__main__':
     unittest.main()

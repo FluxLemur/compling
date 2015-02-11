@@ -3,6 +3,8 @@ from math import log
 from CorpusParser import TagCounter,Word,START
 
 class Tagger:
+    ''' Tags sentences after learning from the WSJ corpus '''
+
     def __init__(self):
         self.tag_counter = TagCounter()
         self.tag_counter.parse_corpus()
@@ -59,4 +61,13 @@ class Tagger:
 
     @staticmethod
     def split_sentence(sentence):
-        return [string.lower(i) for i in re.findall('\w+|\'{2}|`{2}|\S', sentence)]
+        ''' Splits a sentence into words '''
+        bad_contractions = ["n't"]
+        s = sentence
+        for b in bad_contractions:
+            i = s.find(b)
+            while i != -1:
+                s= s[:i] + ' ' + s[i:]
+                i = s.find(b, i+2)
+        expr = re.compile("n\'t|\w+|\'{2}|`{2}|\'m|\'d|\'s|\'re|\'ve|\S")
+        return [string.lower(i) for i in expr.findall(s)]
