@@ -86,19 +86,21 @@ class TagCounter:
     ''' This class stores the number of relative counts for (tag, tag)
         and (word, tag) pairs, and provides P(word | tag) and P(tag | tag) '''
     _delta = 1e-6
-    def __init__(self):
+    def __init__(self, only_words=False):
         self.tag_tag_count = {}
         self.word_tag_count = {}
         self.tag_count = {}
         self.word_count = {}
+        self.only_words = only_words
 
     def parse_file(self, f):
         ''' accepts a .POS file and updates the (tag,tag) and (word,tag) counts '''
         def add_count(word,tag,tag_prev):
             self.word_count[word] = self.word_count.get(word, 0) + 1
             self.tag_count[tag] = self.tag_count.get(tag, 0) + 1
-            self.tag_tag_count[(tag,tag_prev)] = self.tag_tag_count.get((tag,tag_prev), 0) + 1
             self.word_tag_count[(word,tag)] = self.word_tag_count.get((word,tag), 0) + 1
+            if not self.only_words:
+                self.tag_tag_count[(tag,tag_prev)] = self.tag_tag_count.get((tag,tag_prev), 0) + 1
 
         for sentence in parse_file(f):
             i = 1
