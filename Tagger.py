@@ -1,4 +1,4 @@
-import re, string
+import re, string, sys
 from math import log
 from CorpusParser import TagCounter,Word,START
 
@@ -11,11 +11,12 @@ class Tagger:
             self.tag_counter.parse_corpus()
         else:
             self.tag_counter = c
+        self.tags = self.tag_counter.tags()
 
     def tag_words(self, words):
         ''' Uses the Viterbi dynamic programming algorithm to determine the most
             likely tagging for a sentence '''
-        tags = self.tag_counter.tags()
+        tags = self.tags
         n = len(words)
         k = len(tags)
         p_w = self.tag_counter.p_word
@@ -36,6 +37,12 @@ class Tagger:
         # induction steps
         for word_i in xrange(1, n):
             for tag_i in xrange(k):
+                # for a known word, only consider the tags that we have observed
+                if words[word_i] in self.tag_counter.word_count and \
+                      tags[tag_i] not in self.tag_counter.word_tags(words[word_i]):
+                    score[word_i][tag_i] = -sys.maxint
+                    continue
+
                 log_p_word_tag = log(p_w(words[word_i],tags[tag_i]))
 
                 # considering the best tagging up to word_i - 1, determine the best

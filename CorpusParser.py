@@ -103,6 +103,7 @@ class TagCounter:
                 self.tag_tag_count[(tag,tag_prev)] = self.tag_tag_count.get((tag,tag_prev), 0) + 1
 
         for sentence in parse_file(f):
+            self.tag_count[START.tag] = self.tag_count.get(START.tag, 0) + 1
             i = 1
             while i < len(sentence):
                 word = sentence[i].chars
@@ -123,11 +124,11 @@ class TagCounter:
 
     def p_word(self, word, tag):
         ''' P(word | tag), with small smoothing factor '''
-        return (TagCounter._delta + self.word_tag_count.get((word,tag),0)) / self.tag_count.get(tag, 1)
+        return (TagCounter._delta + self.word_tag_count.get((word,tag),0)) / (TagCounter._delta + self.tag_count.get(tag, 0))
 
     def p_tag(self, tag, tag_prev):
         ''' P(tag1 | tag2), with small smoothing factor '''
-        return (TagCounter._delta + self.tag_tag_count.get((tag,tag_prev),0))/ self.tag_count.get(tag_prev, 1)
+        return (TagCounter._delta + self.tag_tag_count.get((tag,tag_prev),0))/ (TagCounter._delta + self.tag_count.get(tag_prev, 0))
 
     def word_tags(self, word):
         ret = {}

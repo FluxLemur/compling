@@ -10,6 +10,12 @@ chunk = 100 / folds
 total_errs = 0
 total_matches = 0
 
+# Size of test varies how many sentences in each file are checked
+SMALL = 1
+MEDIUM = 5
+LARGE = -1
+size = SMALL
+
 def percent_match(total_errs, total_matches):
     return 1.0 - (1.0*total_errs) / total_matches
 
@@ -37,7 +43,7 @@ def cross_validate(count_words):
         def file_validate(f):
             global total_errs, total_matches
             sentences = parse_file(f)
-            for sent in sentences[:5]:
+            for sent in sentences[:size]:
                 words = []
                 for word in sent[1:]: # sent[0] will always be START
                     words.append(word.chars)
