@@ -4,23 +4,9 @@ and a TagCounter class that can extract information from the WSJ corpus.
 '''
 
 import string
-
-class Word:
-    #apostrophes = {}
-    def __init__(self, chars, tag):
-        self.chars = string.lower(chars)    # characters that make up the word
-        self.tag = tag                      # POS tag for the word
-        #if "'" in chars:
-        #    Word.apostrophes[chars] = Word.apostrophes.get(chars, 0) + 1
-    def __repr__(self):
-        return self.chars + '/' + self.tag
-    def __str__(self):
-        return self.__repr__()
-    def __eq__(self, other):
-        return (isinstance(other, self.__class__)
-                and self.chars == other.chars and self.tag == other.tag)
-    def is_end(self):
-        return self.tag == '.' or self.tag == ')'
+from WordClassifier import WordClassifier
+from Word import Word
+from numpy import log
 
 class InvalidWordFormatError(Exception):
     def __init__(self, invalid_word):
@@ -98,21 +84,24 @@ class TagCounter:
         self.word_count = {}
         self.only_words = only_words
         self.tagset = None
+        self.classifier = WordClassifier(self.tag_count, TagCounter._delta)
 
     def parse_file(self, f):
         ''' accepts a .POS file and updates the (tag,tag) and (word,tag) counts '''
         def add_count(word,tag,tag_prev):
-            self.word_count[word] = self.word_count.get(word, 0) + 1
+            self.word_count[word.chars] = self.word_count.get(word.chars, 0) + 1
             self.tag_count[tag] = self.tag_count.get(tag, 0) + 1
-            self.word_tag_count[(word,tag)] = self.word_tag_count.get((word,tag), 0) + 1
+            self.word_tag_count[(word.chars,tag)] = self.word_tag_count.get((word.chars,tag), 0) + 1
             if not self.only_words:
                 self.tag_tag_count[(tag,tag_prev)] = self.tag_tag_count.get((tag,tag_prev), 0) + 1
+                # when extracting features, we use the regular-case words
+                self.classifier.add_feature_count(word.true_chars, tag)
 
         for sentence in parse_file(f):
             self.tag_count[START.tag] = self.tag_count.get(START.tag, 0) + 1
             i = 1
             while i < len(sentence):
-                word = sentence[i].chars
+                word = sentence[i]
                 tag = sentence[i].tag
                 tag_prev = sentence[i-1].tag
 
@@ -137,6 +126,10 @@ class TagCounter:
         ''' P(tag1 | tag2), with small smoothing factor '''
         return (TagCounter._delta + self.tag_tag_count.get((tag,tag_prev),0)) / \
                 (TagCounter._delta + self.tag_count.get(tag_prev, 0))
+
+    def log_p_unknown_word(self, word, tag, tag_prev):
+        ''' Uses Naive Bayes to guess the P(word | tag) '''
+        return log(self.p_tag(tag, tag_prev)) + self.classifier.log_p_word(word, tag)
 
     def has_word(self, word):
         return word in self.word_count

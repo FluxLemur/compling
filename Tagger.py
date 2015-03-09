@@ -1,6 +1,7 @@
-import re, string, sys
+import re, sys
 from math import log
-from CorpusParser import TagCounter,Word,START
+from CorpusParser import TagCounter,START
+from Word import Word
 #from numpy import *
 
 class Tagger:
@@ -10,9 +11,9 @@ class Tagger:
         if c == None:
             self.tag_counter = TagCounter()
 
-            # temporarily, only train the default Tagger on 1/10th of the data
-            #self.tag_counter.parse_corpus_range(range(10))
-            self.tag_counter.parse_corpus()
+            # temporarily, only train the default Tagger on part of the data
+            self.tag_counter.parse_corpus_range(range(50))
+            #self.tag_counter.parse_corpus()
 
         else:
             self.tag_counter = c
@@ -21,6 +22,8 @@ class Tagger:
     def tag_words(self, words):
         ''' Uses the Viterbi dynamic programming algorithm to determine the most
             likely tagging for a sentence '''
+        guess = True
+
         tags = self.tags
         n = len(words)
         k = len(tags)
@@ -38,14 +41,16 @@ class Tagger:
         score = n_by_k(n, k)
         backpointer = n_by_k(n, k)
         for i in xrange(k):
-            score[0][i] = log(p_w(words[0], tags[i])) + log(p_t(tags[i], START.tag))
+            score[0][i] = log(p_w(words[0].lower(), tags[i])) + log(p_t(tags[i], START.tag))
 
         # induction steps
         for word_i in xrange(1, n):
+            word = words[word_i].lower()
             for tag_i in xrange(k):
+                tag = tags[tag_i]
                 # for a known word, only consider the tags that we have observed
-                if self.tag_counter.has_word(words[word_i]) and \
-                       not self.tag_counter.word_has_tag(words[word_i], tags[tag_i]):
+                known = self.tag_counter.has_word(word)
+                if known and not self.tag_counter.word_has_tag(word, tag):
                     score[word_i][tag_i] = -sys.maxint
                     continue
 
@@ -54,11 +59,18 @@ class Tagger:
                 max_score = None
                 max_score_i = 0
                 for prev_i in range(k):
-                    temp_score = score[word_i-1][prev_i] + log(p_t(tags[tag_i],tags[prev_i]))
+                    temp_score = score[word_i-1][prev_i] + log(p_t(tag, tags[prev_i]))
+                    if guess and not known:
+                        temp_score += \
+                                self.tag_counter.log_p_unknown_word(words[word_i],tag,tags[prev_i])
                     if temp_score > max_score:
                         max_score = temp_score
                         max_score_i = prev_i
-                score[word_i][tag_i] = max_score + log(p_w(words[word_i],tags[tag_i]))
+
+                score[word_i][tag_i] = max_score
+                if not guess or known:
+                    score[word_i][tag_i] += log(p_w(word, tag))
+
                 backpointer[word_i][tag_i] = max_score_i
 
         # backtrack for solution tags
@@ -93,4 +105,4 @@ class Tagger:
                 s= s[:i] + ' ' + s[i:]
                 i = s.find(b, i+2)
         expr = re.compile("n\'t|\w+|\'{2}|`{2}|\'m|\'d|\'s|\'re|\'ve|\S")
-        return [string.lower(i) for i in expr.findall(s)]
+        return [i for i in expr.findall(s)]
