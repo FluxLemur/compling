@@ -1,12 +1,17 @@
+'''
+Contains the Word class, functionality for parsing words, sentences, and files,
+and a TagCounter class that can extract information from the WSJ corpus.
+'''
+
 import string
 
 class Word:
-    apostrophes = {}
+    #apostrophes = {}
     def __init__(self, chars, tag):
         self.chars = string.lower(chars)    # characters that make up the word
         self.tag = tag                      # POS tag for the word
-        if "'" in chars:
-            Word.apostrophes[chars] = Word.apostrophes.get(chars, 0) + 1
+        #if "'" in chars:
+        #    Word.apostrophes[chars] = Word.apostrophes.get(chars, 0) + 1
     def __repr__(self):
         return self.chars + '/' + self.tag
     def __str__(self):
@@ -92,6 +97,7 @@ class TagCounter:
         self.tag_count = {}
         self.word_count = {}
         self.only_words = only_words
+        self.tagset = None
 
     def parse_file(self, f):
         ''' accepts a .POS file and updates the (tag,tag) and (word,tag) counts '''
@@ -124,11 +130,22 @@ class TagCounter:
 
     def p_word(self, word, tag):
         ''' P(word | tag), with small smoothing factor '''
-        return (TagCounter._delta + self.word_tag_count.get((word,tag),0)) / (TagCounter._delta + self.tag_count.get(tag, 0))
+        return (TagCounter._delta + self.word_tag_count.get((word,tag),0)) / \
+                (TagCounter._delta + self.tag_count.get(tag, 0))
 
     def p_tag(self, tag, tag_prev):
         ''' P(tag1 | tag2), with small smoothing factor '''
-        return (TagCounter._delta + self.tag_tag_count.get((tag,tag_prev),0))/ (TagCounter._delta + self.tag_count.get(tag_prev, 0))
+        return (TagCounter._delta + self.tag_tag_count.get((tag,tag_prev),0)) / \
+                (TagCounter._delta + self.tag_count.get(tag_prev, 0))
+
+    def has_word(self, word):
+        return word in self.word_count
+
+    def word_has_tag(self, word, tag):
+        return (word, tag) in self.word_tag_count
+
+    def has_tag(self, tag):
+        return tag in self.tag_count
 
     def word_tags(self, word):
         ret = {}
@@ -157,3 +174,21 @@ class TagCounter:
 
     def parse_corpus(self):
         self.parse_corpus_range(range(100))
+
+    def descriptive_tag(self, tag):
+        self.parse_tagset()
+        return self.tagset.get(tag, tag)
+
+    def parse_tagset(self):
+        ''' Gets the description of each tag from the tagset.txt description file'''
+        if self.tagset:
+            return
+
+        self.tagset = {}
+        def parse_tagset_line(line):
+            s = line.split()
+            self.tagset[s[0]] = line[len(s[0]):].strip()
+
+        f = open('tagset.txt')
+        for line in f:
+            parse_tagset_line(line)
