@@ -1,25 +1,30 @@
 ''' Runs the cross-validation routines to test the accuracy of the Tagger '''
+
 from Tagger import Tagger
 from CorpusParser import TagCounter, map_files, parse_file
 import sys, time
 
-# approximate number of words in the corpus
-#TOTAL_WORDS = 553177.
+#TOTAL_WORDS = 553177. # approximate number of words in the corpus
 folds = 10
 chunk = 100 / folds
 total_errs = 0
 total_matches = 0
 
-# Size of test varies how many sentences in each file are checked
+# Size of test determines how many sentences in each file are checked
 SMALL = 1
 MEDIUM = 5
-LARGE = -1
+LARGE = -1  # every file
 size = LARGE
+
+timing = True   # whether to print time of computations
 
 def percent_match(total_errs, total_matches):
     return 1.0 - (1.0*total_errs) / total_matches
 
 def cross_validate(count_words):
+    ''' Runs cross validation on the Tagger, count_words = True iff the Tagger counts all the words,
+        so P(word | tag) is known, but P(tag | prev_tag) is still only 90% known '''
+
     global total_errs, total_matches
     sum_err = 0
     print 'Fold    Err    Match    Frac_Match'
@@ -40,7 +45,8 @@ def cross_validate(count_words):
             c.parse_corpus_range(test_range)
         t = Tagger(c)
         tm = time.time() - tm
-        print tm
+        if timing:
+            print tm,
 
         # file_validate is mapped across all files in test_range
         def file_validate(f):
@@ -55,20 +61,19 @@ def cross_validate(count_words):
                 errs = 0
                 for (actual_w, pred_w) in zip(sent, tagged):
                     if actual_w.tag != pred_w.tag:
-                        #print actual_w, pred_w
+                        #print actual_w, pred_w     # prints the mistagged pairs
                         errs += 1
                     else:
                         matches += 1
                 total_errs += errs
                 total_matches += matches
-            #sys.stdout.write("\r%d%%" % ((total_errs+total_matches)*chunk*100./TOTAL_WORDS))
-            #sys.stdout.flush()
 
         tm = time.time()
         map_files(file_validate, test_range)
         tm = time.time() - tm
+        if timing:
+            print tm
         print '%3d  %6d  %7d      %0.4f' %(i, total_errs, total_matches, percent_match(total_errs, total_matches))
-        print tm
         print ''
 
         sum_err += percent_match(total_errs, total_matches)
@@ -78,5 +83,5 @@ def cross_validate(count_words):
 if __name__ == '__main__':
     print 'Cross validating with some unknown words...'
     cross_validate(False)
-    print '\nCross validating with NO unknown words...'
-    cross_validate(True)
+    #print '\nCross validating with NO unknown words...'
+    #cross_validate(True)

@@ -141,6 +141,7 @@ class TagCounter:
         return tag in self.tag_count
 
     def word_tags(self, word):
+        ''' get the known tags assigned to a specific word '''
         ret = {}
         for tag in self.tag_count.keys():
             if (word,tag) in self.word_tag_count:
@@ -166,9 +167,11 @@ class TagCounter:
         map_files(self.parse_file, fold_range)
 
     def parse_corpus(self):
+        ''' parse the entire corpus '''
         self.parse_corpus_range(range(100))
 
     def descriptive_tag(self, tag):
+        ''' returns the description of the Penn Treebank tag '''
         self.parse_tagset()
         return self.tagset.get(tag, tag)
 
